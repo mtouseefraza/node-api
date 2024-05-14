@@ -40,8 +40,8 @@ exports.login = (req, res) => {
         const token = jwt.sign({ userId: data[0].id }, jwtSecretKey, {
           expiresIn: '2h',
         });
-        let { Name } = data[0];
-        res.status(200).send({status:1,message:"login successfully",data:{ Name,token }});
+        let { Name , Mobile, Email} = data[0];
+        res.status(200).send({status:1,message:"login successfully",data:{ Name , Mobile, Email ,token }});
       }
   })
   .catch(async err => {
@@ -65,6 +65,50 @@ exports.findAll = (req, res) => {
     res.status(500).send({status:0,message:error.message || "Some error occurred while creating the User.",error:error});
   });
 };
+
+// Retrieve all Users from the database.
+exports.findAllList = async (req, res) =>  {
+  let result = {}; 
+  const Name = req.query.Name;
+  const pageNumber = parseInt(req.body.pageNumber) || 0;
+  const limit = parseInt(req.body.limit) || 10;
+  let SortBy = req.body.SortBy || 'DESC';
+  SortBy = (SortBy == 'DESC') ? '-' : '';
+  let Sort = req.body.Sort || '_id';
+  console.log(req.body);
+  console.log(`${SortBy}${Sort}`);
+  var condition = Name ? { Name: { $regex: new RegExp(Name), $options: "i" } } : {};
+
+  /*=============Total data count and Pagination Here===================*/
+  const totalPosts = await User.countDocuments(condition).exec();
+  let startIndex = pageNumber * limit;
+  const endIndex = (pageNumber + 1) * limit;
+  result.totalPosts = totalPosts;
+  if (startIndex > 0) {
+    result.previous = {
+        pageNumber: pageNumber - 1,
+        limit: limit,
+    };
+  }
+  if (endIndex < (totalPosts)) {
+      result.next = {
+        pageNumber: pageNumber + 1,
+        limit: limit,
+      };
+  }
+
+  User.find(condition).sort(`${SortBy}${Sort}`).skip(startIndex).limit(limit)
+    .then(data => {
+      result.data = data;
+      res.status(200).send({status:1,message:"Done",data:result});
+  })
+  .catch(async err => {
+    let error = await handleValidationError(err);
+    res.status(500).send({status:0,message:error.message || "Some error occurred while creating the User.",error:error});
+  });
+};
+
+
 
 // Find a single User with an id
 exports.findOne = (req, res) => {

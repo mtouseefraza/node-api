@@ -10,8 +10,13 @@ module.exports = app => {
   // Create a  User login
   router.post("/login", users.login);
 
+
   // Retrieve all Users
   router.get("/", verifyToken, users.findAll);
+
+  // Retrieve all Users
+  router.post("/list", verifyToken, users.findAllList);
+
 
   // Retrieve all active Users
   router.get("/published", verifyToken,users.findAllPublished);
